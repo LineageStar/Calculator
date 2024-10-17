@@ -44,6 +44,15 @@ class Big_Integer {
             r_num = std::move(other.r_num);
             return *this;
         }
+        template<typename T>
+        Big_Integer& operator=(T number) {
+            r_num.clear();
+            while (number) {
+                r_num.push_back(num % MOD - '0');
+                number /= MOD;
+            }
+            return *this;
+        }
         Big_Integer operator+(const Big_Integer& other) const {
             Big_Integer result;
             int carry = 0;
