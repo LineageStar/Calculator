@@ -15,6 +15,9 @@ public:
         num_len = 1;
         r_num.assign(1, '0');
     }
+    Big_Integer(int len, char ch) {
+        r_num.resize(len, ch);
+    }
     Big_Integer(const std::string& number) {
         num_len = number.size();
         r_num.assign(number.rbegin(), number.rend());
@@ -97,22 +100,28 @@ public:
     Big_Integer operator-(T number) const {
         return *this - Big_Integer(number);
     }
-    Big_Integer operator*(const Big_Integer& other) const {
-        Big_Integer result;
-        result.num_len = num_len + other.num_len;
-        result.r_num.assign(result.num_len, '0');
-        for (int i = 0; i < num_len; ++i) {
-            for (int j = 0, carry = 0; j < other.num_len || carry; ++j) {
-                long long cur = result.r_num[i + j] + r_num[i] * 1ll * (j < other.num_len ? other.r_num[j] : 0) + carry;
-                result.r_num[i + j] = cur % MOD + '0';
-                carry = cur / MOD;
+    Big_Integer operator*(const Big_Integer &other) {
+        int len1 = this->r_num.size();
+        int len2 = other.r_num.size();
+        int re_len = len1 + len2;
+        Big_Integer temp_num(re_len, '0');
+        int offset = 0, temp_offset;
+        for (int i = 0; i < len1; i++) {
+            for (int j = 0; j < len2; j++) {
+                int cur_offset = (this->r_num[i] - '0') * (other.r_num[j] - '0');
+                temp_offset = cur_offset + offset + temp_num.r_num[i + j] - '0';
+                temp_num.r_num[i + j] = temp_offset % MOD + '0';
+                offset = temp_offset / MOD;
+            }
+            if (offset) {
+                temp_num.r_num[i + len2] = temp_num.r_num[i + len2] - '0' + offset + '0';
+                offset = 0;
             }
         }
-        while (result.num_len > 1 && result.r_num.back() == 0) {
-            result.r_num.pop_back();
-            --result.num_len;
+        while (*(temp_num.r_num.end() - 1) == '0' && temp_num.r_num.end() - 1 != temp_num.r_num.begin()) {
+            temp_num.r_num.pop_back();
         }
-        return result;
+        return temp_num;
     }
     template<typename T>
     Big_Integer operator*(T number) const {
