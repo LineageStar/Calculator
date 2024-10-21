@@ -5,6 +5,7 @@
 #include <vector>
 // #include <bitset>
 #include <string>
+#include <cstring>
 
 using i64 = long long;
 using i128 = __int128;
