@@ -1,109 +1,110 @@
-#ifndef _CALCULATOR_H_
-#define _CALCULATOR_H_
+#ifndef CALCULATOR_H
+#define CALCULATOR_H
 
-#include <iostream>
-#include <string>
 #include <stack>
+#include <cctype>
 #include <stdexcept>
-#include "Big_Integer.hpp"
+#include"Big_Integer.hpp"
 
-template <typename T>
+template<typename T>
 class Calculator {
 public:
-    T evaluate(const std::string& expression) {
-        std::string expr = removeSpaces(expression);
-        return parseExpression(expr);
-    }
+    T evaluate(const std::string& expression);
 
 private:
-    std::string removeSpaces(const std::string& expr) {
-        std::string result;
-        for (char ch : expr) {
-            if (!isspace(ch)) result += ch;
-        }
-        return result;
-    }
-
-    T parseExpression(const std::string& expr) {
-        std::stack<T> values;
-        std::stack<char> ops;
-        for (size_t i = 0; i < expr.length(); ++i) {
-            if (isdigit(expr[i])) {
-                T val = parseNumber(expr, i);
-                values.push(val);
-            } else if (expr[i] == '(') {
-                ops.push(expr[i]);
-            } else if (expr[i] == ')') {
-                while (!ops.empty() && ops.top() != '(') {
-                    processTop(values, ops);
-                }
-                ops.pop();
-            } else if (isOperator(expr[i])) {
-                while (!ops.empty() && precedence(ops.top()) >= precedence(expr[i])) {
-                    processTop(values, ops);
-                }
-                ops.push(expr[i]);
-            } else {
-                throw std::invalid_argument("Invalid character in expression");
-            }
-        }
-
-        while (!ops.empty()) {
-            processTop(values, ops);
-        }
-
-        return values.top();
-    }
-
-    T parseNumber(const std::string& expr, size_t& i) {
-        std::string num_str;
-        while (i < expr.length() && (isdigit(expr[i]) || expr[i] == '0')) {
-            num_str += expr[i++];
-        }
-        --i; // Adjust for the increment in the loop
-        return T(num_str);
-    }
-
-    void processTop(std::stack<T>& values, std::stack<char>& ops) {
-        T b = values.top(); values.pop();
-        T a = values.top(); values.pop();
-        char op = ops.top(); ops.pop();
-        values.push(applyOperation(a, b, op));
-    }
-
-    bool isOperator(char op) {
-        return op == '+' || op == '-' || op == '*' || op == '/';
-    }
-
-    int precedence(char op) {
-        if (op == '+' || op == '-') return 1;
-        if (op == '*' || op == '/') return 2;
-        return 0;
-    }
-
-    T applyOperation(const T& a, const T& b, char op) {
-        switch (op) {
-            case '+': return a + b;
-            case '-': return a - b;
-            case '*': return a * b;
-            case '/':
-                if (b == T("0")) throw std::invalid_argument("Division by zero");
-                return a / b;
-            default: throw std::invalid_argument("Invalid operator");
-        }
-    }
+    std::string removeSpaces(const std::string& expr);
+    T parseExpression(const std::string& expr);
+    void processTop(std::stack<T>& values, std::stack<char>& ops);
+    bool isOperator(char op);
+    int precedence(char op);
+    T applyOperation(T a, T b, char op);
 };
 
-int main() {
-    Calculator<Big_Integer> calc;
-    try {
-        std::string expression = "12345678901234567890 + (23456789012345678901 * 2)";
-        std::cout << "Result: " << calc.evaluate(expression) << std::endl;
-    } catch (const std::invalid_argument& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+template<typename T>
+T Calculator<T>::evaluate(const std::string& expression) {
+    std::string expr = removeSpaces(expression);
+    return parseExpression(expr);
+}
+
+template<typename T>
+std::string Calculator<T>::removeSpaces(const std::string& expr) {
+    std::string result;
+    for (char ch : expr) {
+        if (!isspace(ch)) result += ch;
     }
+    return result;
+}
+
+template<typename T>
+T Calculator<T>::parseExpression(const std::string& expr) {
+    std::stack<T> values;
+    std::stack<char> ops;
+    for (size_t i = 0; i < expr.length(); ++i) {
+        if (isdigit(expr[i])) {
+            T val = 0;
+            while (i < expr.length() && isdigit(expr[i])) {
+                Big_Integer ten = 10, num_now = expr[i] - '0';
+                val = (val * ten) + num_now;
+                ++i;
+            }
+            values.push(val);
+            --i;
+        } else if (expr[i] == '(') {
+            ops.push(expr[i]);
+        } else if (expr[i] == ')') {
+            while (!ops.empty() && ops.top() != '(') {
+                processTop(values, ops);
+            }
+            ops.pop(); // Remove '('
+        } else if (isOperator(expr[i])) {
+            while (!ops.empty() && precedence(ops.top()) >= precedence(expr[i])) {
+                processTop(values, ops);
+            }
+            ops.push(expr[i]);
+        } else {
+            throw std::invalid_argument("Invalid character in expression");
+        }
+    }
+
+    while (!ops.empty()) {
+        processTop(values, ops);
+    }
+
+    return values.top();
+}
+
+template<typename T>
+void Calculator<T>::processTop(std::stack<T>& values, std::stack<char>& ops) {
+    T b = values.top(); values.pop();
+    T a = values.top(); values.pop();
+    char op = ops.top(); ops.pop();
+    values.push(applyOperation(a, b, op));
+}
+
+template<typename T>
+bool Calculator<T>::isOperator(char op) {
+    return op == '+' || op == '-' || op == '*' || op == '/';
+}
+
+template<typename T>
+int Calculator<T>::precedence(char op) {
+    if (op == '+' || op == '-') return 1;
+    if (op == '*' || op == '/') return 2;
     return 0;
 }
 
+template<typename T>
+T Calculator<T>::applyOperation(T a, T b, char op) {
+    switch (op) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/':
+            if (b == 0) throw std::invalid_argument("Division by zero");
+            return a / b;
+        default: throw std::invalid_argument("Invalid operator");
+    }
+}
 
-#endif // _CALCULATOR_H_
+
+#endif // CALCULATOR_HPP
